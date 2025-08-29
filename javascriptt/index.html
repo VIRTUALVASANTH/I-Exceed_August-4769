@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>World Time Zone Analog Clock</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .clock {
+      width: 300px;
+      height: 300px;
+      border: 10px solid #3b82f6;
+      border-radius: 50%;
+      position: relative;
+      background: white;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .center-dot {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      background: #1e3a8a;
+      border-radius: 50%;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 10;
+    }
+
+    .hand {
+      position: absolute;
+      bottom: 50%;
+      left: 50%;
+      transform-origin: bottom center;
+      transform: translateX(-50%) rotate(0deg);
+      border-radius: 6px;
+    }
+
+    .hour {
+      width: 8px;
+      height: 70px;
+      background: #1e40af;
+      z-index: 3;
+    }
+
+    .minute {
+      width: 6px;
+      height: 100px;
+      background: #2563eb;
+      z-index: 2;
+    }
+
+    .second {
+      width: 2px;
+      height: 120px;
+      background: #ef4444;
+      z-index: 1;
+    }
+
+    .number {
+      position: absolute;
+      width: 30px;
+      height: 30px;
+      text-align: center;
+      line-height: 30px;
+      font-weight: bold;
+      color: #1f2937;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col items-center justify-center p-6">
+  <h1 class="text-3xl font-bold text-blue-800 mb-6">🕰️ World Timezone Clock</h1>
+
+  <div class="mb-6">
+    <label for="timezone" class="text-lg font-semibold mr-2">Select Time Zone:</label>
+    <select id="timezone" class="px-4 py-2 rounded border border-gray-300 shadow-md">
+      <!-- Will be filled by JS -->
+    </select>
+  </div>
+
+  <div class="clock" id="clock">
+    <div class="center-dot"></div>
+    <div class="hand hour" id="hourHand"></div>
+    <div class="hand minute" id="minuteHand"></div>
+    <div class="hand second" id="secondHand"></div>
+  </div>
+
+  <script>
+    // Fill the dropdown with available timezones
+    const timezoneSelect = document.getElementById("timezone");
+    const supportedZones = Intl.supportedValuesOf("timeZone");
+
+    supportedZones.forEach(zone => {
+      const option = document.createElement("option");
+      option.value = zone;
+      option.textContent = zone;
+      timezoneSelect.appendChild(option);
+    });
+
+    // Default timezone (auto-detect)
+    timezoneSelect.value = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+    // Add clock numbers dynamically
+    const clock = document.getElementById("clock");
+    for (let i = 1; i <= 12; i++) {
+      const angle = (i * 30) * Math.PI / 180;
+      const radius = 130;
+      const x = 150 + radius * Math.sin(angle);
+      const y = 150 - radius * Math.cos(angle);
+
+      const number = document.createElement("div");
+      number.className = "number";
+      number.style.left = `${x - 15}px`;
+      number.style.top = `${y - 15}px`;
+      number.textContent = i;
+      clock.appendChild(number);
+    }
+
+    const hourHand = document.getElementById("hourHand");
+    const minuteHand = document.getElementById("minuteHand");
+    const secondHand = document.getElementById("secondHand");
+
+    function updateClock() {
+      const timeZone = timezoneSelect.value;
+      const now = new Date();
+
+      // Get local time in selected timezone
+      const options = {
+        timeZone,
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false
+      };
+
+      const formatter = new Intl.DateTimeFormat("en-GB", options);
+      const parts = formatter.formatToParts(now);
+
+      const hour = parseInt(parts.find(p => p.type === "hour").value, 10);
+      const minute = parseInt(parts.find(p => p.type === "minute").value, 10);
+      const second = parseInt(parts.find(p => p.type === "second").value, 10);
+
+      const hourDeg = ((hour % 12) + minute / 60) * 30;
+      const minuteDeg = (minute + second / 60) * 6;
+      const secondDeg = second * 6;
+
+      hourHand.style.transform = `translateX(-50%) rotate(${hourDeg}deg)`;
+      minuteHand.style.transform = `translateX(-50%) rotate(${minuteDeg}deg)`;
+      secondHand.style.transform = `translateX(-50%) rotate(${secondDeg}deg)`;
+    }
+
+    // Update every second
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Update immediately when timezone changes
+    timezoneSelect.addEventListener("change", updateClock);
+  </script>
+</body>
+</html>
